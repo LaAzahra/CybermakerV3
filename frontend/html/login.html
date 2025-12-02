@@ -1,0 +1,60 @@
+// ATENÇÃO: Use este script DENTRO da tag <script> do seu login.html
+document.getElementById("loginForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    
+    // 1. CAPTURA DOS DADOS
+    const email = document.getElementById("username").value.trim();
+    const senha = document.getElementById("password").value.trim();
+
+    // 2. CONFIGURAÇÃO DA URL BASE (Adaptada do seu código, mas usando API_BASE é melhor)
+    const API_BASE = "https://cybermaker-1-n7a7.onrender.com"; 
+
+    try {
+        // 3. REQUISIÇÃO DE LOGIN
+        const res = await fetch(`${API_BASE}/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, senha })
+        });
+
+        const data = await res.json();
+        
+        if (res.ok && data.success) {
+            
+            const usuarioLogado = data.usuario; // Contém id, nome, foto, pontos
+            const tipoUsuario = data.tipo_usuario; // <-- CHAVE PARA O REDIRECIONAMENTO
+            
+            // 4. ARMAZENAMENTO CORRETO DOS DADOS
+            // Use 'usuarioData' para consistência (como fizemos antes)
+            localStorage.setItem("usuarioData", JSON.stringify(usuarioLogado));
+            localStorage.setItem("tipoUsuario", tipoUsuario);
+            
+            alert("Login realizado com sucesso!");
+
+            // 5. CHAMA A ROTA ONLINE
+            // A variável usuarioLogado está definida aqui, permitindo o uso seguro do ID.
+            fetch(`${API_BASE}/usuarios/online`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ usuario_id: usuarioLogado.id })
+            })
+            .then(res => console.log('Status online atualizado.'))
+            .catch(err => console.error('Erro ao atualizar status online:', err));
+
+
+            // 6. REDIRECIONAMENTO CORRIGIDO: Baseado no tipoUsuario
+            if (tipoUsuario === 'recrutador') {
+                window.location.href = "../assets/html/dashboard_recrutador.html";
+            } else {
+                window.location.href = "../assets/html/arena.html"; // Redireciona para a Arena (Usuário)
+            }
+
+        } else {
+            // Lida com Credenciais Inválidas ou Conta Não Confirmada (status 403)
+            alert("Erro: " + data.error);
+        }
+    } catch (err) {
+        console.error("Erro na requisição:", err);
+        alert("Erro de conexão com o servidor!");
+    }
+});
