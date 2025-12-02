@@ -44,10 +44,10 @@ if (process.env.DATABASE_URL) {
 } else {
     console.log("💻 Usando variáveis locais para conexão ao banco!");
 
-    const DB_HOST = process.env.DB_HOST || "localhost";
+    const DB_HOST = process.env.DB_HOST || "mysql.railway.internal";
     const DB_USER = process.env.DB_USER || "root";
-    const DB_PASSWORD = process.env.DB_PASSWORD || "Automata";
-    const DB_NAME = process.env.DB_NAME || "CyberMaker";
+    const DB_PASSWORD = process.env.DB_PASSWORD || "IuvXzZMwSzNBEIVlWwwsdbHZzOYTmJyB";
+    const DB_NAME = process.env.DB_NAME || "railway";
 
     pool = mysql.createPool({
         host: DB_HOST,
