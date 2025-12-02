@@ -23,52 +23,28 @@ app.use(express.json({ limit: "10mb" }));
 /* ================================
    CONEXÃO CORRETA COM MYSQL RAILWAY
 ================================ */
+
 import mysql from "mysql2/promise";
 
 let pool;
 
 try {
-  console.log("🔍 Detectando variáveis Railway...");
+  console.log("🌍 Conectando usando variáveis MYSQL* da Railway...");
 
-  // Railway sempre fornece MYSQL_URL
-  if (process.env.MYSQL_URL) {
-    console.log("🌍 MYSQL_URL detectada (Railway)");
-
-    const db = new URL(process.env.MYSQL_URL);
-
-    pool = mysql.createPool({
-      host: db.hostname,                 // MYSQLHOST
-      user: decodeURIComponent(db.username), // MYSQLUSER
-      password: decodeURIComponent(db.password), // MYSQLPASSWORD
-      database: db.pathname.replace("/", ""), // MYSQLDATABASE
-      port: Number(db.port) || 3306,         // MYSQLPORT
-      ssl: { rejectUnauthorized: false },    // NECESSÁRIO na Railway
-      waitForConnections: true,
-      connectionLimit: 10,
-    });
-
-  } else {
-    console.log("💻 Usando variáveis locais (sem Railway)");
-
-    pool = mysql.createPool({
-      host: process.env.DB_HOST || "localhost",
-      user: process.env.DB_USER || "root",
-      password: process.env.DB_PASSWORD || "",
-      database: process.env.DB_NAME || "",
-      port: Number(process.env.DB_PORT) || 3306,
-      waitForConnections: true,
-      connectionLimit: 10,
-    });
-  }
-
-  console.log("✅ Pool de conexão criado com sucesso!");
+  pool = mysql.createPool({
+    host: process.env.MYSQLHOST,
+    user: process.env.MYSQLUSER,
+    password: process.env.MYSQLPASSWORD,
+    database: process.env.MYSQLDATABASE,
+    port: Number(process.env.MYSQLPORT),
+    ssl: { rejectUnauthorized: false },
+    waitForConnections: true,
+    connectionLimit: 10
+  });
 
 } catch (err) {
   console.error("❌ ERRO AO CONFIGURAR BANCO:", err);
 }
-
-export default pool;
-
 
 
 /* ================================
@@ -87,7 +63,7 @@ export default pool;
 /* ================================
    SERVIR FRONTEND
 ================================ */
-app.use(express.static(path.join(__dirname, "frontend")));
+app.use(express.static(path.join(__dirname, "../frontend")));
 
 /* ================================
    ROTAS API
@@ -156,6 +132,7 @@ app.post("/api/login", async (req, res) => {
     res.status(500).json({ success: false, error: "Erro interno" });
   }
 });
+const API_BASE = "/api";
 
 // ================= CONFIRMAR EMAIL =================
 app.get("/api/confirmar/:token", async (req, res) => {
@@ -233,4 +210,7 @@ app.get("*", (req, res) => {
    INICIAR SERVIDOR
 ================================ */
 const PORT = process.env.PORT || 3000;
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/index.html"));
+});
 app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));

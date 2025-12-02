@@ -1,16 +1,13 @@
 {
-  "name": "cybermaker-backend",
-  "version": "1.0.0",
-  "main": "server.js",
+  "name": "cybermaker",
   "type": "module",
-  "dependencies": {
-    "bcrypt": "^5.1.0",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^4.18.2",
-    "mysql2": "^3.6.0"
-  },
   "scripts": {
-    "start": "node server.js"
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mysql2": "^3.2.0",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5"
   }
 }
