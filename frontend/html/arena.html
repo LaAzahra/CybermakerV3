@@ -204,7 +204,7 @@
 
   async function carregarIdeias() {
     arena.innerHTML = "";
-    const res = await fetch("https://cybermaker-1-n7a7.onrender.com/api/ideias");
+    const res = await fetch("https://cybermakerv3-production.up.railway.app/api/ideias");
     const ideias = await res.json();
 
     ideias.forEach((ideia, index) => {
@@ -248,7 +248,7 @@
 
 const API_BASE = (location.hostname.includes("localhost"))
     ? "http://localhost:3000"
-    : "https://cybermaker-1-n7a7.onrender.com";
+    : "https://cybermakerv3-production.up.railway.app";
 
 async function listarDesafios() {
     const listaContainer = document.getElementById('lista-desafios');
