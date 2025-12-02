@@ -1,92 +1,138 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Registro - CyberMaker</title>
-  <!-- Corrigido caminho do CSS -->
-  <link rel="stylesheet" href="../assets/css/registrar.css">
-</head>
-<body>
-  <div class="registro-container">
-    <h2>Registrar Conta</h2>
-    <form id="form-registro">
-      <input type="text" id="nome" placeholder="Nome" required>
-      <input type="email" id="email" placeholder="Email" required>
-      <input type="password" id="senha" placeholder="Senha" required>
+import express from "express";
+import mysql from "mysql2/promise";
+import cors from "cors";
+import bcrypt from "bcrypt";
+import path from "path";
+import { fileURLToPath } from "url";
+import crypto from "crypto";
 
-      <div class="tipo-usuario-selector">
-        <label>Você é:</label>
-        <div class="radio-options">
-          <input type="radio" id="user-usuario" name="tipo_usuario" value="usuario" checked required>
-          <label for="user-usuario">Usuário (Coder)</label>
+/* ================================
+   CONFIGURAÇÃO PATH
+================================ */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-          <input type="radio" id="user-recrutador" name="tipo_usuario" value="recrutador" required>
-          <label for="user-recrutador">Recrutador</label>
-        </div>
-      </div>
+const app = express();
 
-      <label for="foto">Foto de Perfil (opcional)</label>
-      <input type="file" id="foto" accept="image/*">
+/* ================================
+   MIDDLEWARES
+================================ */
+app.use(cors());
+app.use(express.json({ limit: "10mb" }));
 
-      <button type="submit">Registrar</button>
-    </form>
-    <div class="link">
-      Já possui conta? <a href="login.html">Faça login</a>
-    </div>
-  </div>
-
-  <script>
-    // --- Configuração da API ---
-    const API_BASE = location.hostname.includes("localhost")
-      ? "http://localhost:3000/api"
-      : "https://cybermakerv3-production.up.railway.app/api";
-
-    document.getElementById("form-registro").addEventListener("submit", async e => {
-      e.preventDefault();
-
-      const nome = document.getElementById("nome").value.trim();
-      const email = document.getElementById("email").value.trim();
-      const senha = document.getElementById("senha").value.trim();
-      const fotoInput = document.getElementById("foto");
-      const tipo_usuario = document.querySelector('input[name="tipo_usuario"]:checked').value;
-
-      async function enviarRegistro(fotoBase64 = null) {
-        try {
-          const res = await fetch(`${API_BASE}/registrar`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              nome,
-              email,
-              senha,
-              foto: fotoBase64,
-              tipo_usuario
-            })
-          });
-
-          const data = await res.json();
-
-          if (res.ok && data.success) {
-            alert(data.message || "Registrado com sucesso! Verifique seu e-mail.");
-            window.location.href = "confirmacao_pendente.html";
-          } else {
-            alert("Erro: " + (data.error || "Erro desconhecido"));
-          }
-        } catch (err) {
-          console.error("Erro na requisição:", err);
-          alert("Erro de conexão com o servidor!");
-        }
-      }
-
-      if (fotoInput.files.length > 0) {
-        const reader = new FileReader();
-        reader.onload = () => enviarRegistro(reader.result);
-        reader.readAsDataURL(fotoInput.files[0]);
-      } else {
-        enviarRegistro();
-      }
+/* ================================
+   CONEXÃO COM MYSQL (RAILWAY SAFE)
+================================ */
+let pool;
+try {
+  if (process.env.DATABASE_URL) {
+    console.log("🌍 Railway DATABASE_URL detectada");
+    const dbUrl = new URL(process.env.DATABASE_URL);
+    pool = mysql.createPool({
+      host: dbUrl.hostname,
+      user: decodeURIComponent(dbUrl.username),
+      password: decodeURIComponent(dbUrl.password),
+      database: dbUrl.pathname.replace("/", ""),
+      port: Number(dbUrl.port) || 3306,
+      ssl: { rejectUnauthorized: false },
+      waitForConnections: true,
+      connectionLimit: 10,
     });
-  </script>
-</body>
-</html>
+  } else {
+    console.log("💻 Usando variáveis DB_*");
+    pool = mysql.createPool({
+      host: process.env.DB_HOST || "localhost",
+      user: process.env.DB_USER || "root",
+      password: process.env.DB_PASSWORD || "",
+      database: process.env.DB_NAME || "",
+      port: Number(process.env.DB_PORT) || 3306,
+      waitForConnections: true,
+      connectionLimit: 10,
+    });
+  }
+} catch (err) {
+  console.error("❌ ERRO AO CONFIGURAR BANCO:", err);
+}
+
+/* ================================
+   TESTE DE CONEXÃO AUTOMÁTICO
+================================ */
+(async () => {
+  try {
+    const conn = await pool.getConnection();
+    console.log("✅ MYSQL CONECTADO COM SUCESSO!");
+    conn.release();
+  } catch (err) {
+    console.error("❌ ERRO AO CONECTAR NO MYSQL:", err.message);
+  }
+})();
+
+/* ================================
+   ROTAS API
+================================ */
+app.get("/api/ping", (req, res) => res.json({ ok: true }));
+
+app.post("/api/registrar", async (req, res) => {
+  const { nome, email, senha, foto, tipo_usuario } = req.body;
+  if (!nome || !email || !senha || !tipo_usuario)
+    return res.status(400).json({ success: false, error: "Campos obrigatórios faltando." });
+
+  try {
+    const [rows] = await pool.query("SELECT id FROM usuarios WHERE email = ?", [email]);
+    if (rows.length) return res.status(400).json({ success: false, error: "Email já registrado." });
+
+    const hash = await bcrypt.hash(senha, 10);
+    const token = crypto.randomBytes(32).toString("hex");
+
+    await pool.query(`
+      INSERT INTO usuarios
+      (nome, email, senha, foto, pontos, online, tipo_usuario, confirmado, token_confirmacao)
+      VALUES (?, ?, ?, ?, 0, FALSE, ?, FALSE, ?)
+    `, [nome, email, hash, foto || null, tipo_usuario, token]);
+
+    res.json({ success: true, message: "Conta criada. Confirme por e-mail." });
+  } catch (err) {
+    console.error("❌ REGISTRO:", err.message);
+    res.status(500).json({ success: false, error: "Erro interno" });
+  }
+});
+
+app.post("/api/login", async (req, res) => {
+  const { email, senha } = req.body;
+  try {
+    const [rows] = await pool.query(`
+      SELECT id, nome, email, senha, foto, pontos, confirmado, tipo_usuario
+      FROM usuarios
+      WHERE email = ?
+    `, [email]);
+
+    if (!rows.length) return res.status(400).json({ success: false, error: "Credenciais inválidas" });
+
+    const usuario = rows[0];
+    const ok = await bcrypt.compare(senha, usuario.senha);
+    if (!ok) return res.status(400).json({ success: false, error: "Credenciais inválidas" });
+
+    if (!usuario.confirmado) return res.status(403).json({ success: false, error: "Email não confirmado" });
+
+    delete usuario.senha;
+    res.json({ success: true, usuario });
+  } catch (err) {
+    console.error("❌ LOGIN:", err.message);
+    res.status(500).json({ success: false, error: "Erro interno" });
+  }
+});
+
+// Outras rotas de API (desafios, confirmar, etc.) aqui
+// ...
+
+/* ================================
+   SERVIR FRONTEND
+   - Servir apenas a pasta frontend
+================================ */
+app.use(express.static(path.join(__dirname, "frontend")));
+
+/* ================================
+   INICIAR SERVIDOR
+================================ */
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("🚀 Servidor rodando na porta", PORT));
