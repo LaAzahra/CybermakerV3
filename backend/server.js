@@ -6,6 +6,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
 
+/* ================================
+   CONFIGURAÇÃO PATH
+================================ */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -14,22 +17,22 @@ const app = express();
 /* ================================
    MIDDLEWARES
 ================================ */
-
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
-app.get("/", (req, res) => res.send("OK"));
+app.get("/", (req, res) => res.send("✅ API ONLINE"));
 
 /* ================================
-   CONEXÃO COM MYSQL (CORRIGIDA)
+   CONEXÃO COM MYSQL (RAILWAY SAFE)
 ================================ */
 
 let pool;
 
 try {
 
+  // ✅ Railway modo automático via DATABASE_URL
   if (process.env.DATABASE_URL) {
 
-    console.log("🌍 Usando DATABASE_URL (Railway)");
+    console.log("🌍 Railway DATABASE_URL detectada");
 
     const dbUrl = new URL(process.env.DATABASE_URL);
 
@@ -39,31 +42,33 @@ try {
       password: decodeURIComponent(dbUrl.password),
       database: dbUrl.pathname.replace("/", ""),
       port: Number(dbUrl.port) || 3306,
+      ssl: { rejectUnauthorized: false }, // ✅ necessário Railway
       waitForConnections: true,
       connectionLimit: 10,
     });
 
   } else {
 
+    // ✅ Fallback local
     console.log("💻 Usando variáveis DB_*");
 
     pool = mysql.createPool({
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      port: Number(process.env.DB_PORT),
+      host: process.env.DB_HOST || "localhost",
+      user: process.env.DB_USER || "root",
+      password: process.env.DB_PASSWORD || "",
+      database: process.env.DB_NAME || "",
+      port: Number(process.env.DB_PORT) || 3306,
       waitForConnections: true,
       connectionLimit: 10,
     });
   }
 
 } catch (err) {
-  console.error("❌ ERRO AO CONFIGURAR O BANCO:", err);
+  console.error("❌ ERRO AO CONFIGURAR BANCO:", err);
 }
 
 /* ================================
-   TESTE DE CONEXÃO
+   TESTE DE CONEXÃO AUTOMÁTICO
 ================================ */
 
 (async () => {
@@ -72,15 +77,14 @@ try {
     console.log("✅ MYSQL CONECTADO COM SUCESSO!");
     conn.release();
   } catch (err) {
-    console.error("❌ ERRO DE CONEXÃO COM MYSQL:");
-    console.error(err);
+    console.error("❌ ERRO AO CONECTAR NO MYSQL:");
+    console.error(err.message);
   }
 })();
 
 /* ================================
    SERVIR FRONTEND
 ================================ */
-
 app.use(express.static(path.join(__dirname)));
 
 /* ================================
@@ -89,22 +93,24 @@ app.use(express.static(path.join(__dirname)));
 
 app.get("/api/ping", (req, res) => res.json({ ok: true }));
 
-// REGISTRO
+// ================= REGISTRAR =================
 app.post("/api/registrar", async (req, res) => {
   const { nome, email, senha, foto, tipo_usuario } = req.body;
 
-  if (!nome || !email || !senha || !tipo_usuario)
+  if (!nome || !email || !senha || !tipo_usuario) {
     return res.status(400).json({ success: false, error: "Campos obrigatórios faltando." });
+  }
 
   try {
     const [rows] = await pool.query("SELECT id FROM usuarios WHERE email = ?", [email]);
-    if (rows.length) return res.status(400).json({ success: false, error: "Email já registrado." });
+    if (rows.length)
+      return res.status(400).json({ success: false, error: "Email já registrado." });
 
     const hash = await bcrypt.hash(senha, 10);
     const token = crypto.randomBytes(32).toString("hex");
 
     await pool.query(`
-      INSERT INTO usuarios 
+      INSERT INTO usuarios
       (nome, email, senha, foto, pontos, online, tipo_usuario, confirmado, token_confirmacao)
       VALUES (?, ?, ?, ?, 0, FALSE, ?, FALSE, ?)
     `, [nome, email, hash, foto || null, tipo_usuario, token]);
@@ -112,49 +118,52 @@ app.post("/api/registrar", async (req, res) => {
     res.json({ success: true, message: "Conta criada. Confirme por e-mail." });
 
   } catch (err) {
-    console.error("❌ REGISTRO:", err);
+    console.error("❌ REGISTRO:", err.message);
     res.status(500).json({ success: false, error: "Erro interno" });
   }
 });
 
-// LOGIN
+// ================= LOGIN =================
 app.post("/api/login", async (req, res) => {
   const { email, senha } = req.body;
 
   try {
+    const [rows] = await pool.query(`
+      SELECT id, nome, email, senha, foto, pontos, confirmado, tipo_usuario
+      FROM usuarios
+      WHERE email = ?
+    `, [email]);
 
-    const [rows] = await pool.query(
-      "SELECT id, nome, email, senha, foto, pontos, confirmado, tipo_usuario FROM usuarios WHERE email = ?",
-      [email]
-    );
-
-    if (!rows.length) return res.status(400).json({ success: false, error: "Credenciais inválidas" });
+    if (!rows.length)
+      return res.status(400).json({ success: false, error: "Credenciais inválidas" });
 
     const usuario = rows[0];
 
     const ok = await bcrypt.compare(senha, usuario.senha);
-    if (!ok) return res.status(400).json({ success: false, error: "Credenciais inválidas" });
+    if (!ok)
+      return res.status(400).json({ success: false, error: "Credenciais inválidas" });
 
     if (!usuario.confirmado)
       return res.status(403).json({ success: false, error: "Email não confirmado" });
 
     delete usuario.senha;
 
-    res.json({ success: true, usuario, tipo_usuario: usuario.tipo_usuario });
+    res.json({ success: true, usuario });
 
   } catch (err) {
-    console.error("❌ LOGIN:", err);
+    console.error("❌ LOGIN:", err.message);
     res.status(500).json({ success: false, error: "Erro interno" });
   }
 });
 
-// CONFIRMAR EMAIL
+// ================= CONFIRMAR EMAIL =================
 app.get("/api/confirmar/:token", async (req, res) => {
   try {
-    const [result] = await pool.query(
-      "UPDATE usuarios SET confirmado = TRUE, token_confirmacao = NULL WHERE token_confirmacao = ?",
-      [req.params.token]
-    );
+    const [result] = await pool.query(`
+      UPDATE usuarios
+      SET confirmado = TRUE, token_confirmacao = NULL
+      WHERE token_confirmacao = ?
+    `, [req.params.token]);
 
     if (!result.affectedRows)
       return res.status(400).send("Token inválido.");
@@ -162,12 +171,12 @@ app.get("/api/confirmar/:token", async (req, res) => {
     res.redirect(`${process.env.FRONTEND_URL || "/"}login.html`);
 
   } catch (err) {
-    console.error(err);
+    console.error(err.message);
     res.status(500).send("Erro ao confirmar conta.");
   }
 });
 
-// LISTAR DESAFIOS
+// ================= LISTAR DESAFIOS =================
 app.get("/api/desafios", async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -181,17 +190,20 @@ app.get("/api/desafios", async (req, res) => {
     res.json({ success: true, desafios: rows });
 
   } catch (err) {
-    console.error(err);
+    console.error(err.message);
     res.status(500).json({ success: false, error: "Erro interno" });
   }
 });
 
-// POSTAR DESAFIOS
+// ================= POSTAR DESAFIO =================
 app.post("/api/desafios", async (req, res) => {
   const { recrutador_id, titulo, descricao, area } = req.body;
 
   try {
-    const [[user]] = await pool.query("SELECT tipo_usuario FROM usuarios WHERE id = ?", [recrutador_id]);
+    const [[user]] = await pool.query(
+      "SELECT tipo_usuario FROM usuarios WHERE id = ?",
+      [recrutador_id]
+    );
 
     if (!user || user.tipo_usuario !== "recrutador")
       return res.status(403).json({ error: "Apenas recrutadores." });
@@ -204,12 +216,15 @@ app.post("/api/desafios", async (req, res) => {
     res.json({ success: true });
 
   } catch (err) {
-    console.error(err);
+    console.error(err.message);
     res.status(500).json({ error: "Erro ao postar" });
   }
 });
 
-// INICIAR SERVIDOR
+/* ================================
+   INICIAR SERVIDOR
+================================ */
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
