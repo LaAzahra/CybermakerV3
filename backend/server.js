@@ -6,30 +6,27 @@ import path from "path";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
 
-/* ================================
-   CONFIGURAÇÃO PATH
-================================ */
+// ================================
+// CONFIG PATH
+// ================================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 
-/* ================================
-   MIDDLEWARES
-================================ */
+// ================================
+// MIDDLEWARES
+// ================================
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 
-/* ================================
-   CONEXÃO CORRETA COM MYSQL RAILWAY
-================================ */
-
-import mysql from "mysql2/promise";
-
+// ================================
+// CONEXÃO MYSQL RAILWAY
+// ================================
 let pool;
 
 try {
-  console.log("🌍 Conectando usando variáveis MYSQL* da Railway...");
+  console.log("🌍 Conectando ao MySQL do Railway...");
 
   pool = mysql.createPool({
     host: process.env.MYSQLHOST,
@@ -43,34 +40,32 @@ try {
   });
 
 } catch (err) {
-  console.error("❌ ERRO AO CONFIGURAR BANCO:", err);
+  console.error("❌ ERRO no MySQL:", err);
 }
 
-
-/* ================================
-   TESTE DE CONEXÃO
-================================ */
+// Teste
 (async () => {
   try {
     const conn = await pool.getConnection();
-    console.log("✅ MYSQL CONECTADO COM SUCESSO!");
+    console.log("✅ MySQL conectado");
     conn.release();
   } catch (err) {
-    console.error("❌ ERRO AO CONECTAR NO MYSQL:", err.message);
+    console.error("❌ ERRO MySQL:", err.message);
   }
 })();
 
-/* ================================
-   SERVIR FRONTEND
-================================ */
-app.use(express.static(path.join(__dirname, "../frontend")));
+// ================================
+// FRONTEND
+// ================================
+app.use(express.static(path.join(__dirname, "frontend")));
 
-/* ================================
-   ROTAS API
-================================ */
+// ================================
+// ROTAS API
+// ================================
+
 app.get("/api/ping", (req, res) => res.json({ ok: true }));
 
-// ================= REGISTRAR =================
+// REGISTRO
 app.post("/api/registrar", async (req, res) => {
   const { nome, email, senha, foto, tipo_usuario } = req.body;
 
@@ -100,7 +95,7 @@ app.post("/api/registrar", async (req, res) => {
   }
 });
 
-// ================= LOGIN =================
+// LOGIN
 app.post("/api/login", async (req, res) => {
   const { email, senha } = req.body;
 
@@ -124,7 +119,6 @@ app.post("/api/login", async (req, res) => {
       return res.status(403).json({ success: false, error: "Email não confirmado" });
 
     delete usuario.senha;
-
     res.json({ success: true, usuario });
 
   } catch (err) {
@@ -132,9 +126,8 @@ app.post("/api/login", async (req, res) => {
     res.status(500).json({ success: false, error: "Erro interno" });
   }
 });
-const API_BASE = "/api";
 
-// ================= CONFIRMAR EMAIL =================
+// CONFIRMAR
 app.get("/api/confirmar/:token", async (req, res) => {
   try {
     const [result] = await pool.query(`
@@ -146,7 +139,7 @@ app.get("/api/confirmar/:token", async (req, res) => {
     if (!result.affectedRows)
       return res.status(400).send("Token inválido.");
 
-    res.redirect(`${process.env.FRONTEND_URL || "/"}html/login.html`);
+    res.redirect("/html/login.html");
 
   } catch (err) {
     console.error(err.message);
@@ -154,7 +147,7 @@ app.get("/api/confirmar/:token", async (req, res) => {
   }
 });
 
-// ================= LISTAR DESAFIOS =================
+// DESAFIOS
 app.get("/api/desafios", async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -173,7 +166,7 @@ app.get("/api/desafios", async (req, res) => {
   }
 });
 
-// ================= POSTAR DESAFIO =================
+// POSTAR DESAFIO
 app.post("/api/desafios", async (req, res) => {
   const { recrutador_id, titulo, descricao, area } = req.body;
 
@@ -199,18 +192,15 @@ app.post("/api/desafios", async (req, res) => {
   }
 });
 
-/* ================================
-   CATCH-ALL PARA FRONTEND
-================================ */
+// ================================
+// CATCH-ALL CORRETO
+// ================================
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "frontend/html/index.html"));
 });
 
-/* ================================
-   INICIAR SERVIDOR
-================================ */
+// ================================
+// INICIAR SERVIDOR
+// ================================
 const PORT = process.env.PORT || 3000;
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/index.html"));
-});
-app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Rodando na porta ${PORT}`));
