@@ -21,43 +21,31 @@ app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 
 /* ================================
-   CONEXÃO COM MYSQL
+   CONEXÃO CORRETA COM MYSQL RAILWAY
 ================================ */
+
+import mysql from "mysql2/promise";
+
 let pool;
 
 try {
-  if (process.env.DATABASE_URL) {
-    console.log("🌍 Railway DATABASE_URL detectada");
+  console.log("🌍 Conectando usando variáveis MYSQL* da Railway...");
 
-    const dbUrl = new URL(process.env.DATABASE_URL);
+  pool = mysql.createPool({
+    host: process.env.MYSQLHOST,
+    user: process.env.MYSQLUSER,
+    password: process.env.MYSQLPASSWORD,
+    database: process.env.MYSQLDATABASE,
+    port: Number(process.env.MYSQLPORT),
+    ssl: { rejectUnauthorized: false },
+    waitForConnections: true,
+    connectionLimit: 10
+  });
 
-    pool = mysql.createPool({
-      host: dbUrl.hostname,
-      user: decodeURIComponent(dbUrl.username),
-      password: decodeURIComponent(dbUrl.password),
-      database: dbUrl.pathname.replace("/", ""),
-      port: Number(dbUrl.port) || 3306,
-      ssl: { rejectUnauthorized: false },
-      waitForConnections: true,
-      connectionLimit: 10,
-    });
-
-  } else {
-    console.log("💻 Usando variáveis DB_*");
-
-    pool = mysql.createPool({
-      host: process.env.DB_HOST || "localhost",
-      user: process.env.DB_USER || "root",
-      password: process.env.DB_PASSWORD || "",
-      database: process.env.DB_NAME || "",
-      port: Number(process.env.DB_PORT) || 3306,
-      waitForConnections: true,
-      connectionLimit: 10,
-    });
-  }
 } catch (err) {
   console.error("❌ ERRO AO CONFIGURAR BANCO:", err);
 }
+
 
 /* ================================
    TESTE DE CONEXÃO
