@@ -19,19 +19,14 @@ const app = express();
 ================================ */
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
-app.get("/", (req, res) => res.send("✅ API ONLINE"));
 
 /* ================================
-   CONEXÃO COM MYSQL (RAILWAY SAFE)
+   CONEXÃO COM MYSQL
 ================================ */
-
 let pool;
 
 try {
-
-  // ✅ Railway modo automático via DATABASE_URL
   if (process.env.DATABASE_URL) {
-
     console.log("🌍 Railway DATABASE_URL detectada");
 
     const dbUrl = new URL(process.env.DATABASE_URL);
@@ -42,14 +37,12 @@ try {
       password: decodeURIComponent(dbUrl.password),
       database: dbUrl.pathname.replace("/", ""),
       port: Number(dbUrl.port) || 3306,
-      ssl: { rejectUnauthorized: false }, // ✅ necessário Railway
+      ssl: { rejectUnauthorized: false },
       waitForConnections: true,
       connectionLimit: 10,
     });
 
   } else {
-
-    // ✅ Fallback local
     console.log("💻 Usando variáveis DB_*");
 
     pool = mysql.createPool({
@@ -62,35 +55,31 @@ try {
       connectionLimit: 10,
     });
   }
-
 } catch (err) {
   console.error("❌ ERRO AO CONFIGURAR BANCO:", err);
 }
 
 /* ================================
-   TESTE DE CONEXÃO AUTOMÁTICO
+   TESTE DE CONEXÃO
 ================================ */
-
 (async () => {
   try {
     const conn = await pool.getConnection();
     console.log("✅ MYSQL CONECTADO COM SUCESSO!");
     conn.release();
   } catch (err) {
-    console.error("❌ ERRO AO CONECTAR NO MYSQL:");
-    console.error(err.message);
+    console.error("❌ ERRO AO CONECTAR NO MYSQL:", err.message);
   }
 })();
 
 /* ================================
    SERVIR FRONTEND
 ================================ */
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname, "frontend")));
 
 /* ================================
    ROTAS API
 ================================ */
-
 app.get("/api/ping", (req, res) => res.json({ ok: true }));
 
 // ================= REGISTRAR =================
@@ -168,7 +157,7 @@ app.get("/api/confirmar/:token", async (req, res) => {
     if (!result.affectedRows)
       return res.status(400).send("Token inválido.");
 
-    res.redirect(`${process.env.FRONTEND_URL || "/"}login.html`);
+    res.redirect(`${process.env.FRONTEND_URL || "/"}html/login.html`);
 
   } catch (err) {
     console.error(err.message);
@@ -222,11 +211,14 @@ app.post("/api/desafios", async (req, res) => {
 });
 
 /* ================================
+   CATCH-ALL PARA FRONTEND
+================================ */
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend/html/index.html"));
+});
+
+/* ================================
    INICIAR SERVIDOR
 ================================ */
-
 const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log("🚀 Servidor rodando na porta", PORT);
-});
+app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));
