@@ -31,7 +31,7 @@ function carregarIdeias() {
 
 // Botões
 // Navegação
-document.getElementById("btn-inicio").onclick = () => window.location.href = " ../assets/html/index.html";
+document.getElementById("btn-inicio").onclick = () => window.location.href = " ../assets/index.html";
 document.getElementById("btn-diario").onclick = () => window.location.href = "../assets/html/diario.html";
 
 const btnLogin = document.getElementById("btn-login");
