@@ -68,22 +68,65 @@ if (process.env.DB_POST) {
 // ================================
 // '..' sobe do backend/ para a raiz e acessa frontend/
 app.use(express.static(path.join(__dirname, "..", "frontend")));
-
 // ================================
 // ROTAS API (CORRETAS)
 // ... Todas as suas rotas /api/ estão corretas ...
 // ================================
+// Teste de Conexão Assíncrona (Health Check do Banco)
+(async () => {
+  try {
+    // Tenta obter uma conexão para confirmar que o pool está funcionando
+    const conn = await pool.getConnection();
+    console.log("✅ MySQL conectado com sucesso.");
+    conn.release();
+  } catch (err) {
+    // Este erro é crucial: Ele expõe o erro de credencial se a conexão falhar
+    console.error("❌ ERRO MySQL no Teste de Conexão:", err);
+  }
+})();
 
-// ... SEU CÓDIGO DE ROTAS AQUI ...
+
+// ================================
+// ROTAS API (CORPO)
+// ================================
+
+// Rota de Teste de Conexão (Ping)
+app.get("/api/ping", (req, res) => res.json({ ok: true }));
+
+// Rota de Registro (Exemplo Mínimo)
+app.post("/api/registrar", async (req, res) => {
+    // ESTE CÓDIGO É APENAS UM EXEMPLO, SE O CÓDIGO FINAL DE REGISTRO ESTIVER AQUI, USE-O
+    const { nome, email, senha, tipo_usuario } = req.body;
+
+    if (!nome || !email || !senha || !tipo_usuario) {
+        return res.status(400).json({ success: false, error: "Campos obrigatórios faltando." });
+    }
+
+    try {
+        // Exemplo: hash e inserção (usando a sintaxe CORRIGIDA)
+        const hash = await bcrypt.hash(senha, 10);
+        const token = crypto.randomBytes(32).toString("hex");
+
+        await pool.query(`
+            INSERT INTO usuarios
+            (nome, email, senha, foto, pontos, online, tipo_usuario, confirmado, token_confirmacao)
+            VALUES (?, ?, ?, NULL, 0, FALSE, ?, FALSE, ?)
+        `, [nome, email, hash, tipo_usuario, token]);
+
+        res.json({ success: true, message: "Conta criada. Confirme por e-mail." });
+
+    } catch (err) {
+        console.error("❌ ERRO REGISTRO:", err.message);
+        res.status(500).json({ success: false, error: "Erro interno" });
+    }
+});
+
+// ... Inclua todas as suas outras rotas (/api/login, /api/desafios, etc.) aqui.
 
 // ================================
 // CATCH-ALL CORRETO (Caminho Corrigido para SPA)
 // ================================
-app.get("*", (req, res) => {
-  // Caminho corrigido: sobe, vai para frontend/, depois para html/, e pega index.html
-  res.sendFile(path.join(__dirname, "..", "frontend", "html", "index.html"));
-});
-
+app.get("*", (req, res) => { res.sendFile(path.join(__dirname, "..", "frontend", "index.html")); });
 // ================================
 // INICIAR SERVIDOR (Caminho e Bind Corretos)
 // ================================
