@@ -23,11 +23,13 @@ app.use(express.json({ limit: "10mb" }));
 // ================================
 // CONEXÃO MYSQL RAILWAY
 // ================================
+// ================================
+// CONEXÃO MYSQL RAILWAY
+// ================================
 let pool;
 
 try {
   console.log("🌍 Conectando ao MySQL do Railway...");
-
   pool = mysql.createPool({
     host: process.env.MYSQLHOST,
     user: process.env.MYSQLUSER,
@@ -40,7 +42,10 @@ try {
   });
 
 } catch (err) {
-  console.error("❌ ERRO no MySQL:", err);
+  // CORREÇÃO: Altere para imprimir o objeto de erro completo.
+  console.error("❌ ERRO FATAL no MySQL:", err); 
+  // Terminar o processo se a conexão inicial falhar
+  process.exit(1);
 }
 
 // Teste
