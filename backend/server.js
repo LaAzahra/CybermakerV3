@@ -82,7 +82,7 @@ if (process.env.DB_POST) {
 // FRONTEND (Caminho Corrigido)
 // ================================
 // '..' sobe do backend/ para a raiz e acessa frontend/
-app.use(express.static(path.join(__dirname, "..", "frontend")));
+app.use(express.static(path.join(__dirname,"frontend")));
 
 
 // ================================
@@ -126,7 +126,7 @@ app.post("/api/registrar", async (req, res) => {
 // ================================
 app.get("*", (req, res) => { 
     // CORREÇÃO FINAL: Aponta para 'frontend/index.html' (assumindo que o arquivo não está em 'html/')
-    res.sendFile(path.join(__dirname, "..", "frontend", "index.html")); 
+    res.sendFile(path.join(__dirname,"frontend", "index.html")); 
 });
 
 // ================================
