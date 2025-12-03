@@ -203,4 +203,6 @@ app.get("*", (req, res) => {
 // INICIAR SERVIDOR
 // ================================
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Rodando na porta ${PORT}`));
+
+// MUDANÇA: Adicionar '0.0.0.0' para garantir que ele se ligue corretamente à interface do contêiner.
+app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Rodando na porta ${PORT}`));
