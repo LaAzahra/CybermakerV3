@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arena - CyberMaker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+  <script src="script.js"></script>
+  <link rel="stylesheet" href="arena.css"/>
+
+  <style>
+    /* ===== ESTILO ORIGINAL DA ARENA ===== */
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(to bottom, #0d0d0f, #2a0000);
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      background: rgba(20, 0, 0, 0.8);
+      border-bottom: 2px solid #a30000;
+      font-family: 'Cinzel', serif;
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      color: #ff3030;
+      text-shadow: 0 0 10px #ff5050;
+    }
+
+    .arena-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 2rem;
+      padding: 3rem;
+    }
+
+    .card {
+      background: rgba(40, 0, 0, 0.85);
+      border: 2px solid #ff3c00;
+      border-radius: 15px;
+      padding: 1rem;
+      box-shadow: 0 0 15px rgba(255, 60, 0, 0.7);
+      cursor: pointer;
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 30px rgba(255, 80, 0, 1);
+    }
+
+    .card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 12px;
+      margin-bottom: 0.8rem;
+    }
+
+    .card h3 {
+      font-family: 'Cinzel', serif;
+      margin: 0.5rem 0;
+      font-size: 1.3rem;
+      color: #ff8080;
+    }
+
+    .card p {
+      font-size: 0.9rem;
+      line-height: 1.4;
+      color: #f2c6c6;
+    }
+
+    .concluir-btn {
+      margin-top: 1rem;
+      padding: 0.6rem 1rem;
+      background: #ff3030;
+      border: none;
+      color: #fff;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    .concluir-btn:hover {
+      background: #ff5050;
+      transform: scale(1.05);
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      background: rgba(20,0,0,0.8);
+      border-top: 2px solid #a30000;
+      margin-top: 2rem;
+    }
+
+    /* ===== ESTILO DO RANKING ===== */
+    :root {
+      --bg:#07080b; --card:#0f1116; --accent:#7c8cff; --muted:#9aa3d9;
+      --good:#7ef0a1; --danger:#ff7878;
+    }
+    .ranking-container {
+      width:100%;
+      max-width:960px;
+      background:linear-gradient(180deg, rgba(18,18,34,0.6), rgba(10,8,16,0.6));
+      border:1px solid rgba(124,140,255,0.08);
+      border-radius:14px;
+      padding:20px;
+      margin:40px auto 0;
+      box-shadow: 0 10px 30px rgba(7,6,12,0.6);
+      backdrop-filter: blur(6px);
+    }
+
+    header.top {
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:18px;
+    }
+    header.top h1 {
+      margin:0;
+      font-family:Cinzel, serif;
+      letter-spacing:1px;
+      font-size:1.6rem;
+      color:var(--accent);
+    }
+    .btn {
+      background:transparent;
+      border:1px solid rgba(124,140,255,0.12);
+      color:var(--muted);
+      padding:8px 12px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:600;
+    }
+
+    .list {
+      display:grid;
+      gap:10px;
+      margin-top:6px;
+    }
+    .rank-card {
+      display:flex;
+      gap:14px;
+      align-items:center;
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border:1px solid rgba(124,140,255,0.04);
+      padding:12px;
+      border-radius:12px;
+      transition:transform .18s ease, box-shadow .18s ease;
+    }
+    .rank-card:hover { transform:translateY(-4px); box-shadow:0 10px 30px rgba(12,8,30,0.45); }
+
+    .rank { width:54px; height:54px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+      font-weight:700; color:#071227; background:linear-gradient(180deg,#fff 0%, #dfe8ff 100%); flex-shrink:0; }
+
+    .userpic { width:54px; height:54px; border-radius:50%; overflow:hidden; flex-shrink:0; border:2px solid rgba(255,255,255,0.06);
+      background:linear-gradient(90deg,#1a1a2e,#2b0a0a); display:flex;align-items:center;justify-content:center;color:var(--muted); }
+
+    .user-info { flex:1; min-width:0; }
+    .user-info .name { font-weight:700; font-size:1rem; color:#eaf0ff; display:flex; align-items:center; gap:8px;}
+    .user-info .sub { font-size:0.85rem; color:var(--muted); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    /* Modal para concluir projeto */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: #1a0000;
+      padding: 2rem;
+      border-radius: 15px;
+      border: 2px solid #ff3030;
+      box-shadow: 0 0 20px rgba(255,60,0,0.9);
+      max-width: 500px;
+      width: 90%;
+      text-align: left;
+    }
+
+    .modal-content h2 {
+      font-family: 'Cinzel', serif;
+      color: #ff5050;
+      margin-bottom: 1rem;
+    }
+
+    .modal-content label {
+      display: block;
+      margin: 0.5rem 0 0.2rem;
+    }
+
+    .modal-content input,
+    .modal-content textarea {
+      width: 100%;
+      padding: 0.6rem;
+      border: none;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="logo" id="logo">
+      <img id="fotoPerfil" src="imagens/default.jpg" alt="Foto de perfil">
+      <span id="nome-usuario">CyberMaker</span>
+    </div>
+    <nav>
+      <a href="index.html"><button>Início</button></a>
+      <a href="diario.html"><button>Diário</button></a>
+      <a href="comunidade.html"><button>A comunidade</button></a>
+    </nav>
+  </header>
+<br><br><br><br><br><br><br><br>
+  <!-- ===== RANKING ===== -->
+  <div class="ranking-container">
+    <header class="top">
+      <h1>Ranking — CyberMaker</h1>
+      <div class="controls">
+        <div class="muted-small">Atualiza a cada 5s</div>
+        <button class="btn" id="refreshBtn" title="Forçar atualização">Atualizar</button>
+      </div>
+    </header>
+    <br><br><br>
+    <section id="list" class="list" aria-live="polite"></section>
+  </div>
+<br><br><br><br>
+  <!-- ===== IDEIAS ===== -->
+  <div class="arena-container" id="arena">
+    <!-- As cartas serão carregadas do localStorage -->
+  </div>
+  <!-- Modal para concluir projeto -->
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <h2>Concluir Projeto</h2>
+      <form id="concluir-form">
+        <label for="video">Link do vídeo:</label>
+        <input type="url" id="video" name="video" required>
+
+        <label for="imagens">Imagens (links separados por vírgula):</label>
+        <input type="text" id="imagens" name="imagens" required>
+
+        <label for="descrição">Descrição do processo:</label>
+        <textarea id="descrição" name="descrição" rows="4" required></textarea>
+
+        <button type="submit" class="concluir-btn">Postar Conclusão</button>
+        <button type="button" class="close-btn" onclick="fecharModal()">Cancelar</button>
+      </form>
+    </div>
+  </div>
+
+
+  <div class="historico-wrapper">
+    <h2>Histórico de Conclusões</h2>
+    <div id="lista-historico"></div>
+  </div>
+  
+  <footer>2025 CyberMaker - Ecos da Arena</footer>
+
+  <script>
+    /* ===== SCRIPT DO RANKING ===== */
+    async function fetchRanking() {
+      try {
+        const res = await fetch("https://cybermakersite-production-ec76.up.railway.app/api/ranking");
+        const data = await res.json();
+        renderList(data);
+      } catch (err) {
+        console.warn("Falha ao buscar ranking:", err);
+      }
+    }
+
+    function renderList(users) {
+      const listEl = document.getElementById("list");
+      listEl.innerHTML = "";
+      if (!users || users.length === 0) {
+        listEl.innerHTML = "<div class='muted-small'>Nenhum usuário encontrado.</div>";
+        return;
+      }
+      users.sort((a,b)=> (b.pontos || 0) - (a.pontos || 0));
+      users.forEach((u, idx)=>{
+        const card = document.createElement("div");
+        card.className = "rank-card";
+        card.innerHTML = `
+          <div class="rank">${idx+1}</div>
+          <div class="userpic"><img src="${u.foto || 'imagens/default.jpg'}" style="width:100%;height:100%;object-fit:cover;"></div>
+          <div class="user-info">
+            <div class="name">${u.nome || 'Usuário'}</div>
+            <div class="sub">${u.online ? 'Online' : 'Offline'}</div>
+          </div>
+          <div class="points"><strong>${u.pontos || 0}</strong> pts</div>
+        `;
+        listEl.appendChild(card);
+      });
+    }
+
+    document.getElementById("refreshBtn").addEventListener("click", fetchRanking);
+    fetchRanking();
+    setInterval(fetchRanking, 5000);
+
+
+  // ===== SCRIPT DAS IDEIAS (substitua sua implementação atual) =====
+  const arena = document.getElementById("arena");
+
+  // utilitário que tenta extrair id/nome de autor em várias chaves possíveis
+  function findUserForIdea(ideia, usersMap) {
+    if (!ideia || !usersMap) return null;
+
+    // chaves possíveis para ligar ideia -> usuário
+    const possibleKeys = [
+      'autorId','autor_id','usuarioId','usuario_id','userId','user_id','idUsuario','id_usuario','uid','user','autor','autor_nome','nome_autor'
+    ];
+
+    // tenta por id/uid primeiro (valores que sejam numéricos ou pareçam ids)
+    for (const k of possibleKeys) {
+      if (ideia[k]) {
+        const keyval = String(ideia[k]).toLowerCase().trim();
+        if (usersMap.byId && usersMap.byId[keyval]) return usersMap.byId[keyval];
+        if (usersMap.byName && usersMap.byName[keyval]) return usersMap.byName[keyval];
+      }
+    }
+
+    // se a ideia só tem 'autor' como string -> tenta casar por nome
+    if (ideia.autor) {
+      const n = String(ideia.autor).toLowerCase().trim();
+      if (usersMap.byName && usersMap.byName[n]) return usersMap.byName[n];
+    }
+
+    // fallback: se houver um user default no mapa (por exemplo primeiro)
+    if (usersMap.first) return usersMap.first;
+
+    return null;
+  }
+
+  function formatarTempo(dataStr) {
+  const data = new Date(dataStr);
+  const agora = new Date();
+  const diffMs = agora - data;
+
+  const minutos = Math.floor(diffMs / (1000 * 60));
+  const horas = Math.floor(minutos / 60);
+  const dias = Math.floor(horas / 24);
+
+  if (minutos < 1) return "agora mesmo";
+  if (minutos < 60) return `há ${minutos} min`;
+  if (horas < 24) return `há ${horas} h`;
+  if (dias < 7) return `há ${dias} dia${dias > 1 ? "s" : ""}`;
+
+  return data.toLocaleDateString("pt-BR");
+}
+
+  async function carregarIdeias() {
+  arena.innerHTML = "";
+  try {
+    // busca ideias
+    const ideiasRes = await fetch("https://cybermakersite-production-ec76.up.railway.app/api/ideias");
+    let ideias = await ideiasRes.json();
+
+    // Ordenar por data (do mais recente para o mais antigo)
+    ideias.sort((a, b) => new Date(b.created_at || b.data) - new Date(a.created_at || a.data));
+
+    // busca usuários (para foto / nome)
+    let users = [];
+    try {
+      const usersRes = await fetch("https://cybermakersite-production-ec76.up.railway.app/api/ranking");
+      users = await usersRes.json();
+    } catch (e) { users = []; }
+
+    const usersMap = { byId: {}, byName: {}, first: null };
+    if (Array.isArray(users)) {
+      users.forEach(u => {
+        if (u.id) usersMap.byId[String(u.id).toLowerCase()] = u;
+        if (u.nome) usersMap.byName[String(u.nome).toLowerCase()] = u;
+        if (!usersMap.first) usersMap.first = u;
+      });
+    }
+
+    window.ideiasCarregadas = ideias;
+
+    ideias.forEach((ideia, index) => {
+      const usuario =
+        usersMap.byId[String(ideia.usuario_id)] ||
+        usersMap.byName[String((ideia.autor || "").toLowerCase())] ||
+        usersMap.first;
+
+        const card = document.createElement("div");
+card.className = "card";
+card.dataset.id = ideia.id;
+
+card.innerHTML = `
+  <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+    <img src="${ideia.foto || (usuario && usuario.foto) || 'imagens/default.jpg'}"
+         width="40" height="40" style="border-radius:50%;object-fit:cover;">
+    <strong style="color:#ff8080">${ideia.autor || (usuario && usuario.nome) || 'Autor'}</strong>
+  </div>
+
+  <img src="${ideia.img || ideia.imagem || 'imagens/default.jpg'}"
+       style="width:100%;height:150px;object-fit:cover;border-radius:12px;margin-bottom:0.8rem;">
+
+  <h3>${ideia.titulo || 'Sem título'}</h3>
+  <p>${ideia.descrição || ''}</p>
+
+  <div style="color:#aaa; font-size:12px; margin-top:6px;">
+    ${formatarTempo(ideia.created_at || ideia.data || ideia.data_criacao)}
+  </div>
+
+  <button class="concluir-btn" onclick="abrirModal('${ideia.id}')">Concluir</button>
+`;
+arena.appendChild(card);
+
+    });
+
+  } catch (err) {
+    console.error("Erro ao carregar ideias:", err);
+    arena.innerHTML = "<div style='color:#f2c6c6;text-align:center;width:100%'>Erro ao carregar ideias.</div>";
+  }
+}
+
+//atualizar ranking
+async function atualizarRanking() {
+  try {
+    const resp = await fetch("https://cybermakersite-production-ec76.up.railway.app/api/ranking");
+    const data = await resp.json();
+    if (!data.success) {
+      console.error("Erro ao obter ranking:", data.error);
+      return;
+    }
+    const rankingEl = document.querySelector("#ranking-list"); // ajuste seletor
+    if (!rankingEl) return;
+
+    rankingEl.innerHTML = ""; // limpa
+
+    data.ranking.forEach((u, idx) => {
+      const item = document.createElement("div");
+      item.className = "ranking-item";
+      item.innerHTML = `
+        <div class="pos">${idx + 1}</div>
+        <img src="${u.foto || '/assets/default.png'}" alt="${u.nome}" class="avatar" />
+        <div class="nome">${u.nome}</div>
+        <div class="pontos">${u.pontos ?? 0} pts</div>
+      `;
+      rankingEl.appendChild(item);
+    });
+  } catch (err) {
+    console.error("Erro fetching ranking:", err);
+  }
+}
+
+
+
+  // mantém as funções de modal já presentes
+  function abrirModal(id) {
+
+  document.getElementById("modal").style.display = "flex";
+
+  const ideia = window.ideiasCarregadas.find(i => i.id == id);
+
+  document.getElementById("concluir-form").onsubmit = async (e) => {
+    e.preventDefault();
+
+    const video = document.getElementById("video").value;
+    const imagens = document.getElementById("imagens").value;
+    const descrição = document.getElementById("descrição").value;
+
+    const body = {
+      ideia: id,
+      video,
+      imagem: imagens,
+      descrição
+    };
+
+    try {
+      const res = await fetch("https://cybermakersite-production-ec76.up.railway.app/api/conclusoes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        alert("Conclusão enviada com sucesso! 🌟🔥");
+
+        // REMOVE O CARD PELO ID (agora funciona sempre!)
+        const cardRemover = document.querySelector(`.card[data-id="${id}"]`);
+        if (cardRemover) {
+          cardRemover.remove();
+        }
+      } else {
+        alert("Erro ao enviar conclusão: " + data.error);
+      }
+
+    } catch (err) {
+      alert("Falha ao conectar ao servidor.");
+      console.error(err);
+    }
+
+    try {
+    const resp = await fetch("https://cybermakersite-production-ec76.up.railway.app/api/concluir", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usuario_id: usuarioId })
+    });
+    const data = await resp.json();
+    if (!data.success) {
+      console.error("Erro ao concluir:", data.error);
+      alert("Erro ao concluir. Veja console.");
+      return;
+    }
+
+    // Remove o card da lista (se for esse o fluxo)
+    if (cardElement) cardElement.remove();
+
+    // Atualiza ranking na tela (chama função que redesenha o ranking)
+    if (typeof atualizarRanking === "function") atualizarRanking();
+
+    // Opcional: atualiza contador de pontos do usuário logado na UI
+    if (data.usuario) {
+      const meuPontosEl = document.querySelector("#meus-pontos"); // ajuste o seletor
+      if (meuPontosEl) meuPontosEl.textContent = data.usuario.pontos;
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Erro de rede ao tentar concluir.");
+  }
+
+
+    fecharModal();
+  };
+}
+
+
+
+  function fecharModal() {
+    document.getElementById("modal").style.display = "none";
+  }
+
+  // chamada inicial
+  carregarIdeias();
+
+  //histórico de conclusões
+  async function carregarHistorico() {
+  const res = await fetch("https://cybermakersite-production-ec76.up.railway.app/api/historico");
+  const dados = await res.json();
+
+  const area = document.getElementById("lista-historico");
+  area.innerHTML = "";
+
+  dados.forEach(item => {
+    area.innerHTML += `
+      <div class="historico-item">
+        <strong>${item.usuario}</strong> concluiu o card <b>#${item.card_id}</b><br>
+        <em>${item.mensagem}</em><br>
+        <small>${new Date(item.data).toLocaleString()}</small>
+      </div>
+    `;
+  });
+}
+
+carregarHistorico();
+setInterval(carregarHistorico, 15000); // atualiza a cada 15s
+
+  </script>
+</body>
+</html>
