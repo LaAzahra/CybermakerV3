@@ -42,9 +42,7 @@ pool = mysql.createPool({
   });
 
 } catch (err) {
-  // CORREÇÃO: Altere para imprimir o objeto de erro completo.
-  console.error("❌ ERRO FATAL no MySQL:", err); 
-  // Terminar o processo se a conexão inicial falhar
+  console.error("❌ ERRO FATAL no MySQL:", err); // Passe o objeto err diretamente
   process.exit(1);
 }
 
