@@ -30,12 +30,12 @@ let pool;
 
 try {
   console.log("🌍 Conectando ao MySQL do Railway...");
-  pool = mysql.createPool({
-    host: process.env.MYSQLHOST,
-    user: process.env.MYSQLUSER,
-    password: process.env.MYSQLPASSWORD,
-    database: process.env.MYSQLDATABASE,
-    port: Number(process.env.MYSQLPORT),
+pool = mysql.createPool({
+  host: process.env.MYSQL_HOST,      // MUDANÇA AQUI
+  user: process.env.MYSQL_USER,      // MUDANÇA AQUI
+  password: process.env.MYSQL_PASSWORD, // MUDANÇA AQUI
+  database: process.env.MYSQL_DATABASE, // MUDANÇA AQUI
+  port: Number(process.env.MYSQL_PORT),  // MUDANÇA AQUI
     ssl: { rejectUnauthorized: false },
     waitForConnections: true,
     connectionLimit: 10
