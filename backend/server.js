@@ -199,7 +199,7 @@ app.post("/api/desafios", async (req, res) => {
 // CATCH-ALL CORRETO
 // ================================
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "frontend/html/index.html"));
+  res.sendFile(path.join(__dirname, "frontend/index.html"));
 });
 
 // ================================
