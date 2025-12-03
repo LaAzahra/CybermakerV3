@@ -25,38 +25,44 @@ app.use(express.json({ limit: "10mb" }));
 // ================================
 let pool;
 
-try {
-  console.log("🌍 Conectando ao MySQL do Railway...");
-    
-    // Configuração corrigida para usar process.env.MYSQL_PREFIXOS (com underline)
+if (process.env.DB_POST) {
+  console.log("🌍 Usando variável DB_POST para conexão ao banco do Railway!");
+
+  try {
+    const dbUrl = new URL(process.env.DB_POST);
+
     pool = mysql.createPool({
-        host: process.env.MYSQL_HOST, 
-        user: process.env.MYSQL_USER,
-        password: process.env.MYSQL_PASSWORD,
-        database: process.env.MYSQL_DATABASE, 
-        port: Number(process.env.MYSQL_PORT), 
-        ssl: { rejectUnauthorized: false },
-        waitForConnections: true,
-        connectionLimit: 10
+      host: dbUrl.hostname,
+      user: dbUrl.username,
+      password: dbUrl.password,
+      database: dbUrl.pathname.replace("/", ""),
+      port: Number(dbUrl.port) || 51980,
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
     });
+  } catch (err) {
+    console.error("❌ Erro ao interpretar DB_POST:", err);
+  }
+} else {
+  console.log("💻 Usando variáveis locais para conexão ao banco!");
 
-} catch (err) {
-  console.error("❌ ERRO FATAL no MySQL:", err); // Mantém o log de erro completo
-  // Removido process.exit(1) aqui para evitar crash loop no deploy
+  const DB_HOST = process.env.DB_HOST || "localhost";
+  const DB_USER = process.env.DB_USER || "root";
+  const DB_PASSWORD = process.env.DB_PASSWORD || "Automata";
+  const DB_NAME = process.env.DB_NAME || "CyberMaker";
+
+  pool = mysql.createPool({
+    host: DB_HOST,
+    user: DB_USER,
+    password: DB_PASSWORD,
+    database: DB_NAME,
+    port: 53816,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+  });
 }
-
-// Teste de Conexão Assíncrona (Acontece após o servidor iniciar)
-(async () => {
-  try {
-    const conn = await pool.getConnection();
-    console.log("✅ MySQL conectado");
-    conn.release();
-  } catch (err) {
-    // Este erro será exibido se a conexão falhar após a inicialização do pool
-    console.error("❌ ERRO MySQL no Teste de Conexão:", err.message);
-  }
-})();
-
 // ================================
 // FRONTEND (Caminho Corrigido)
 // ================================
